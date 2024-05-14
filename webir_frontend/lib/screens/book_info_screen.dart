@@ -20,10 +20,10 @@ class _BookInfoState extends State<BookInfo> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Text('Title: The Great Gatsby'),
-            Text('Author: F. Scott Fitzgerald'),
-            Text('Price: 9.99'),
+          children: [
+            Text(widget.book.title ?? ''),
+            Text(widget.book.author ?? ''),
+            Text(widget.book.price.toString()),
           ],
         ),
       ),

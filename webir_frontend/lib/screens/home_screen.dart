@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webir_frontend/constants/colors.dart';
+import 'package:webir_frontend/models/filter.dart';
 import 'package:webir_frontend/screens/search_results_screen.dart';
+import 'package:webir_frontend/state/filter_state.dart';
 import 'package:webir_frontend/widgets/appbar.dart';
 import 'package:webir_frontend/widgets/elevated_button.dart';
 import 'package:webir_frontend/widgets/search_button.dart';
 import 'package:webir_frontend/widgets/textform_field.dart';
 
-class Home extends StatefulWidget {
+class Home extends ConsumerStatefulWidget {
   const Home({super.key});
   static const String path = '/';
 
   @override
-  State<Home> createState() => _HomeState();
+  ConsumerState<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends ConsumerState<Home> {
   final TextEditingController controller = TextEditingController();
   int _selectedFilter = 0;
   double _minPrice = 0;
-  double _maxPrice = 1000;
+  double _maxPrice = double.infinity;
 
   @override
   void initState() {
@@ -131,7 +134,8 @@ class _HomeState extends State<Home> {
                   width: 400,
                   height: 40,
                   child: RangeSlider(
-                    values: RangeValues(_minPrice, _maxPrice),
+                    values: RangeValues(_minPrice,
+                        _maxPrice == double.infinity ? 1000 : _maxPrice),
                     min: 0,
                     max: 1000,
                     activeColor: BSConstants.tertiaryColor,
@@ -151,7 +155,7 @@ class _HomeState extends State<Home> {
                     children: [
                       Text('Min: \$${_minPrice.toStringAsFixed(2)}'),
                       Text(
-                          'Max: ${_maxPrice == double.infinity ? 'Unlimited' : '\$${_maxPrice.toStringAsFixed(2)}'}'),
+                          'Max: ${_maxPrice == double.infinity || _maxPrice == 1000 ? 'Unlimited' : '\$${_maxPrice.toStringAsFixed(2)}'}'),
                     ],
                   ),
                 ),
@@ -163,5 +167,10 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void _searchBooks(String text) {}
+  void _searchBooks(String text) {
+    ref.read(filterNotifierProvider.notifier).setMonthIndex(Filter(
+        filterBy: _selectedFilter,
+        priceMin: _minPrice,
+        priceMax: _maxPrice == 1000 ? double.infinity : _maxPrice));
+  }
 }

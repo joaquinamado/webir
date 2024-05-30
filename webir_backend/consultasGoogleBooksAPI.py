@@ -1,7 +1,8 @@
 import requests
 import json
+import os
 
-API_KEY = "AIzaSyAF1lpq-_SjjC5aNCDDOAdnpLZ2Bx4BuQo"
+API_KEY = os.environ.get("API_KEY")
 URL_GOOGLE_BOOKS = "https://www.googleapis.com/books/v1/"
 
 response = requests.get(URL_GOOGLE_BOOKS +"volumes?q=flowers+inauthor:keyes&key="+API_KEY) 

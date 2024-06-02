@@ -1,3 +1,4 @@
+from datetime import datetime
 import scrapy
 from scrapy.crawler import CrawlerProcess
 import json
@@ -134,6 +135,9 @@ class BookSpider(scrapy.Spider):
             three_stars_cant, three_stars_porc = None, None
             two_stars_cant, two_stars_porc = None, None
             one_stars_cant, one_stars_porc = None, None
+        
+        # Agregar la fecha y hora del scraping
+        scraped_at = datetime.now()
 
         book_info = {
             'isbn': self.isbn,
@@ -151,7 +155,8 @@ class BookSpider(scrapy.Spider):
             'two_stars_porcentaje': two_stars_porc,
             'one_stars_cantidad': one_stars_cant,
             'one_stars_porcentaje': one_stars_porc,
-            'precio_kindle': precio_kindle
+            'precio_kindle': precio_kindle,
+            'scraped_at': scraped_at
         }
 
         logging.info(f"Detalles del libro: {book_info}")
@@ -169,12 +174,12 @@ class BookSpider(scrapy.Spider):
             three_stars_cantidad, three_stars_porcentaje, 
             two_stars_cantidad, two_stars_porcentaje, 
             one_stars_cantidad, one_stars_porcentaje, 
-            precio_kindle
+            precio_kindle,scraped_at
         ) VALUES (
             %s, %s, %s, %s, %s, 
             %s, %s, %s, %s, %s, 
             %s, %s, %s, %s, %s, 
-            %s
+            %s,%s
         ) ON CONFLICT (isbn) DO NOTHING
         """
         values = (
@@ -184,7 +189,7 @@ class BookSpider(scrapy.Spider):
             book_info['three_stars_cantidad'], book_info['three_stars_porcentaje'],
             book_info['two_stars_cantidad'], book_info['two_stars_porcentaje'],
             book_info['one_stars_cantidad'], book_info['one_stars_porcentaje'],
-            book_info['precio_kindle']
+            book_info['precio_kindle'],book_info['scraped_at']
         )
         self.cursor.execute(insert_query, values)
         self.conn.commit()

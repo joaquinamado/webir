@@ -9,9 +9,9 @@ API_KEY = str(os.getenv("API_KEY"))
 URL_GOOGLE_BOOKS = "https://www.googleapis.com/books/v1/"
 GENERO = "terror"
 
-def queryGoogleBooksApi(genre):
+def queryGoogleBooksApi(start_index):
     print("Consultando la API de Google Books...")
-    response = requests.get(URL_GOOGLE_BOOKS +"volumes?q=search+subject:"+genre+"&key="+API_KEY)
+    response = requests.get("https://www.googleapis.com/books/v1/volumes?q=subject:terror&startIndex="+str(start_index)+"&maxResults=40&key=AIzaSyAF1lpq-_SjjC5aNCDDOAdnpLZ2Bx4BuQo")
     json_response = response.json()
     print("Consulta exitosa")
     return json_response
@@ -49,13 +49,16 @@ def get_book_isbn13(industryIdentifiers):
             return identifier["identifier"]
     return None
 
-def apiResponseToBookInfo():
+def apiResponseToBookInfo(start_index):
     print("Procesando respuesta de la API")
-    json_response = queryGoogleBooksApi(GENERO)
+    json_response = queryGoogleBooksApi(start_index)
     books_info = []
+    size = 0
     for item in json_response["items"]:
-        #print(json.dumps(item, indent=4))
+        size += 1
         if get_book_isbn13(item["volumeInfo"]["industryIdentifiers"]) == None:
+            continue
+        if "authors" not in item["volumeInfo"]:
             continue
         book_info = {
             'isbn': get_book_isbn13(item["volumeInfo"]["industryIdentifiers"]),
@@ -65,13 +68,14 @@ def apiResponseToBookInfo():
             'editorial': item["volumeInfo"]["publisher"] if "publisher" in item["volumeInfo"] else None,
             'fecha_publicacion': item["volumeInfo"]["publishedDate"],
             'descripcion': item["volumeInfo"]["description"] if "description" in item["volumeInfo"] else None,
-            'paginas': item["volumeInfo"]["pageCount"],
-            'categorias': item["volumeInfo"]["categories"],         #es un arreglo
-            'imagen': item["volumeInfo"]["imageLinks"]["thumbnail"],
+            'paginas': item["volumeInfo"]["pageCount"] if "pageCount" in item["volumeInfo"] else None,
+            'categorias': item["volumeInfo"]["categories"] if "categories" in item["volumeInfo"] else [],         #es un arreglo
+            'imagen': item["volumeInfo"]["imageLinks"]["thumbnail"] if "imageLinks" in item["volumeInfo"] else None,
             'idioma': item["volumeInfo"]["language"]
         }
         books_info.append(book_info)
     print("Procesamiento exitoso")
+    print("Cantidad de libros procesados: ", size)
     return books_info
 
 def saveBookInfoToDB(books_info, conn, cursor):
@@ -97,7 +101,10 @@ def saveBookInfoToDB(books_info, conn, cursor):
 if __name__ == "__main__":
     conn, cursor = connectToDB()
     createsTables(conn, cursor)
-    books_info = apiResponseToBookInfo()
-    saveBookInfoToDB(books_info, conn, cursor)
+    search = queryGoogleBooksApi(0)
+    total_items = search["totalItems"]
+    for i in range(0, total_items, 40):
+        books_info = apiResponseToBookInfo(i)
+        saveBookInfoToDB(books_info, conn, cursor)
     close(conn, cursor)
     

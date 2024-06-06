@@ -1,24 +1,21 @@
 from datetime import datetime
 import scrapy
-from scrapy.crawler import CrawlerProcess
-import json
-import os
+from scrapy.crawler import CrawlerProcess, CrawlerRunner
+from scrapy.utils.log import configure_logging
+from twisted.internet import reactor, defer
 import logging
 from bs4 import BeautifulSoup
 import psycopg2
+from psycopg2.pool import SimpleConnectionPool
 
 class BookSpider(scrapy.Spider):
     name = "book"
     allowed_domains = ["goodreads.com"]
 
-    # Reemplaza este ISBN con el ISBN del libro que quieres buscar
-    isbn = '9788449326660'
-    start_urls = [
-        f'https://www.goodreads.com/search?q={isbn}'
-    ]
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, isbn=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.isbn = isbn
+        self.start_urls = [f'https://www.goodreads.com/search?q={isbn}']
         self.conn = psycopg2.connect(
             dbname="webir",
             user="postgres",
@@ -27,7 +24,7 @@ class BookSpider(scrapy.Spider):
             port="5432"
         )
         self.cursor = self.conn.cursor()
-    
+
     def parse(self, response):
         logging.info("Entrando en parse")
         
@@ -39,6 +36,8 @@ class BookSpider(scrapy.Spider):
         if not book_url:
             book_url = response.css('a[href*="/book/show/"]::attr(href)').get()
             logging.info(f"URL alternativa del libro encontrada: {book_url}")
+        if not book_url:
+            book_url = response.url
         
         if book_url:
             # Manejar URLs completas y relativas
@@ -66,50 +65,134 @@ class BookSpider(scrapy.Spider):
         logging.info("Entrando en parse_book")
         # Extrae los detalles del libro
         raw_title = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookReviewsPage__gridContainer > div.BookReviewsPage__rightColumn > div.BookReviewsPage__pageHeader > div.BookReviewsPage__pageTitle > h1.Text.H1Title > a').get()
-        soup = BeautifulSoup(raw_title, 'html.parser')
-        titulo = soup.get_text(strip=True)
+        if (raw_title):
+            soup = BeautifulSoup(raw_title, 'html.parser')
+            titulo = soup.get_text(strip=True)
+        else:
+            raw_title = response.css('head > title').get()
+            if (raw_title):
+                soup = BeautifulSoup(raw_title, 'html.parser')
+                titulo = soup.get_text(strip=True)
+            else:
+                titulo = "Sin titulo"
         logging.info(f"Título extraído: {titulo}")
 
         raw_stars = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookReviewsPage__gridContainer > div.BookReviewsPage__rightColumn > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__ratingStatistics > div > div:nth-child(1) > div').get()
-        soup = BeautifulSoup(raw_stars, 'html.parser')
-        stars = soup.get_text(strip=True)
-        logging.info(f"Estrellas extraído: {stars}")
+        if (raw_stars):
+            soup = BeautifulSoup(raw_stars, 'html.parser')
+            stars = soup.get_text(strip=True)
+            logging.info(f"Estrellas extraído: {stars}")
+        else:
+            raw_stars = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookPage__gridContainer > div.BookPage__rightColumn > div.BookPage__mainContent > div.BookPageMetadataSection > div.BookPageMetadataSection__ratingStats > a > div:nth-child(1)').get()
+            if (raw_stars):
+                soup = BeautifulSoup(raw_stars, 'html.parser')
+                stars = soup.get_text(strip=True)
+                logging.info(f"Estrellas extraído: {stars}")
+            else:
+                stars = "Sin entrellas"
 
         raw_5stars = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookReviewsPage__gridContainer > div.BookReviewsPage__rightColumn > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(1) > div.RatingsHistogram__labelTotal').get()
-        soup = BeautifulSoup(raw_5stars, 'html.parser')
-        five_stars = soup.get_text(strip=True)
-        logging.info(f"5 Estrellas extraído: {five_stars}")
-
+        if (raw_5stars):
+            soup = BeautifulSoup(raw_5stars, 'html.parser')
+            five_stars = soup.get_text(strip=True)
+            logging.info(f"5 Estrellas extraído: {five_stars}")
+        else:
+            raw_5stars = response.css('#ReviewsSection > div:nth-child(7) > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(1) > div.RatingsHistogram__labelTotal').get()
+            if (raw_5stars):
+                soup = BeautifulSoup(raw_5stars, 'html.parser')
+                five_stars = soup.get_text(strip=True)
+                logging.info(f"5 Estrellas extraído: {stars}")
+            else:
+                five_stars = "Sin 5 estrellas"
+        
+        
         raw_4stars = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookReviewsPage__gridContainer > div.BookReviewsPage__rightColumn > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(2) > div.RatingsHistogram__labelTotal').get()
-        soup = BeautifulSoup(raw_4stars, 'html.parser')
-        four_stars = soup.get_text(strip=True)
-        logging.info(f"4 Estrellas extraído: {four_stars}")
-
+        if (raw_4stars):
+            soup = BeautifulSoup(raw_4stars, 'html.parser')
+            four_stars = soup.get_text(strip=True)
+            logging.info(f"4 Estrellas extraído: {four_stars}")
+        else:
+            raw_4stars = response.css('#ReviewsSection > div:nth-child(7) > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(2) > div.RatingsHistogram__labelTotal').get()
+            if (raw_4stars):
+                soup = BeautifulSoup(raw_4stars, 'html.parser')
+                four_stars = soup.get_text(strip=True)
+                logging.info(f"4 Estrellas extraído: {four_stars}")
+            else:
+                four_stars = "Sin 4 estrellas"
+        
+        
         raw_3stars = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookReviewsPage__gridContainer > div.BookReviewsPage__rightColumn > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(3) > div.RatingsHistogram__labelTotal').get()
-        soup = BeautifulSoup(raw_3stars, 'html.parser')
-        three_stars = soup.get_text(strip=True)
-        logging.info(f"3 Estrellas extraído: {three_stars}")
-
+        if (raw_3stars):
+            soup = BeautifulSoup(raw_3stars, 'html.parser')
+            three_stars = soup.get_text(strip=True)
+            logging.info(f"3 Estrellas extraído: {three_stars}")
+        else:
+            raw_3stars = response.css('#ReviewsSection > div:nth-child(7) > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(3) > div.RatingsHistogram__labelTotal').get()
+            if (raw_3stars):
+                soup = BeautifulSoup(raw_3stars, 'html.parser')
+                three_stars = soup.get_text(strip=True)
+                logging.info(f"3 Estrellas extraído: {three_stars}")
+            else:
+                three_stars = "Sin 3 estrellas"
+        
+        
+        
         raw_2stars = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookReviewsPage__gridContainer > div.BookReviewsPage__rightColumn > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(4) > div.RatingsHistogram__labelTotal').get()
-        soup = BeautifulSoup(raw_2stars, 'html.parser')
-        two_stars = soup.get_text(strip=True)
-        logging.info(f"2 Estrellas extraído: {two_stars}")
-
+        if (raw_2stars):
+            soup = BeautifulSoup(raw_2stars, 'html.parser')
+            two_stars = soup.get_text(strip=True)
+            logging.info(f"2 Estrellas extraído: {two_stars}")
+        else:
+            raw_2stars = response.css('#ReviewsSection > div:nth-child(7) > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(4) > div.RatingsHistogram__labelTotal').get()
+            if (raw_2stars): 
+                soup = BeautifulSoup(raw_2stars, 'html.parser')
+                two_stars = soup.get_text(strip=True)
+                logging.info(f"2 Estrellas extraído: {two_stars}")
+            else:
+                two_stars = "Sin 2 estrellas"
+        
         raw_1stars = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookReviewsPage__gridContainer > div.BookReviewsPage__rightColumn > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(5) > div.RatingsHistogram__labelTotal').get()
-        soup = BeautifulSoup(raw_1stars, 'html.parser')
-        one_stars = soup.get_text(strip=True)
-        logging.info(f"1 Estrellas extraído: {one_stars}")
-
+        if (raw_1stars):
+            soup = BeautifulSoup(raw_1stars, 'html.parser')
+            one_stars = soup.get_text(strip=True)
+            logging.info(f"1 Estrellas extraído: {one_stars}")
+        else:
+            raw_1stars = response.css('#ReviewsSection > div:nth-child(7) > div.ReviewsSectionStatistics > div.ReviewsSectionStatistics__histogram > div > div:nth-child(5) > div.RatingsHistogram__labelTotal').get()
+            if (raw_1stars):
+                soup = BeautifulSoup(raw_1stars, 'html.parser')
+                one_stars = soup.get_text(strip=True)
+                logging.info(f"1 Estrellas extraído: {one_stars}")
+            else:
+                one_stars = "Sin 1 estrellas"
+        
         raw_autor = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookReviewsPage__gridContainer > div.BookReviewsPage__rightColumn > div.BookReviewsPage__pageHeader > div.BookReviewsPage__pageTitle > h3 > div > span:nth-child(1) > a > span').get()
-        soup = BeautifulSoup(raw_autor, 'html.parser')
-        autor = soup.get_text(strip=True)
-        logging.info(f"Autor extraído: {autor}")
+        if (raw_autor):
+            soup = BeautifulSoup(raw_autor, 'html.parser')
+            autor = soup.get_text(strip=True)
+            logging.info(f"Autor extraído: {autor}")
+        else:
+            raw_autor = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookPage__gridContainer > div.BookPage__rightColumn > div.BookPage__mainContent > div.BookPageMetadataSection > div.BookPageMetadataSection__contributor > h3 > div > span:nth-child(1) > a > span').get()
+            if (raw_autor):
+                soup = BeautifulSoup(raw_autor, 'html.parser')
+                autor = soup.get_text(strip=True)
+                logging.info(f"Autor extraído: {autor}")
+            else:
+                autor = "Sin autor"
 
         raw_precio_kindle = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookReviewsPage__gridContainer > div.BookReviewsPage__leftColumn > div > div.BookReviewsPage__bookActions > div > div:nth-child(2) > div > div.Button__container.Button__container--block > button > span:nth-child(1)').get()
-        soup = BeautifulSoup(raw_precio_kindle, 'html.parser')
-        precio_kindle = soup.get_text(strip=True)
-        logging.info(f"Precio Kindle extraido: {precio_kindle}")
-
+        if (raw_precio_kindle):
+            soup = BeautifulSoup(raw_precio_kindle, 'html.parser')
+            precio_kindle = soup.get_text(strip=True)
+            logging.info(f"Precio Kindle extraido: {precio_kindle}")
+        else:
+            raw_precio_kindle = response.css('#__next > div.PageFrame.PageFrame--siteHeaderBanner > main > div.BookPage__gridContainer > div.BookPage__leftColumn > div > div.BookActions > div:nth-child(2) > div > div.Button__container.Button__container--block > button > span:nth-child(1)').get()
+            if (raw_precio_kindle):
+                soup = BeautifulSoup(raw_precio_kindle, 'html.parser')
+                precio_kindle = soup.get_text(strip=True)
+                logging.info(f"Precio Kindle extraido: {precio_kindle}")
+            else:
+                precio_kindle = "Sin precio Kindle"  
+                  
         descripcion = response.css('div#description span::text').getall()
         logging.info(f"Descripción extraída: {descripcion}")
 
@@ -174,12 +257,12 @@ class BookSpider(scrapy.Spider):
             three_stars_cantidad, three_stars_porcentaje, 
             two_stars_cantidad, two_stars_porcentaje, 
             one_stars_cantidad, one_stars_porcentaje, 
-            precio_kindle,scraped_at
+            precio_kindle, scraped_at
         ) VALUES (
             %s, %s, %s, %s, %s, 
             %s, %s, %s, %s, %s, 
             %s, %s, %s, %s, %s, 
-            %s,%s
+            %s, %s
         ) ON CONFLICT (isbn) DO NOTHING
         """
         values = (
@@ -189,7 +272,7 @@ class BookSpider(scrapy.Spider):
             book_info['three_stars_cantidad'], book_info['three_stars_porcentaje'],
             book_info['two_stars_cantidad'], book_info['two_stars_porcentaje'],
             book_info['one_stars_cantidad'], book_info['one_stars_porcentaje'],
-            book_info['precio_kindle'],book_info['scraped_at']
+            book_info['precio_kindle'], book_info['scraped_at']
         )
         self.cursor.execute(insert_query, values)
         self.conn.commit()
@@ -199,13 +282,41 @@ class BookSpider(scrapy.Spider):
         self.cursor.close()
         self.conn.close()
 
+def get_isbns_from_db():
+    pool = SimpleConnectionPool(
+        1,
+        20,
+        dbname="webir",
+        user="postgres",
+        password="admin187%",
+        host="webir.postgres.database.azure.com",
+        port="5432",
+    )
+    try:
+        with pool.getconn() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT isbn FROM googlebooks WHERE isbn NOT IN (SELECT isbn FROM good_reads)")
+                isbns = cursor.fetchall()
+                return [isbn[0] for isbn in isbns if isbn[0]]
+    except Exception as e:
+        logging.error(f"Error al conectar con la base de datos: {e}")
+        return []
+
+@defer.inlineCallbacks
+def run_multiple_crawls(isbns):
+    runner = CrawlerRunner()
+    for isbn in isbns:
+        yield runner.crawl(BookSpider, isbn=isbn)
+    reactor.stop()
+
 if __name__ == "__main__":
     # Configurar el logging
+    configure_logging()
     logging.basicConfig(level=logging.INFO)
 
-    # Crear el proceso de Scrapy
-    process = CrawlerProcess()
-    # Iniciar el spider
-    process.crawl(BookSpider)
-    # Ejecutar el proceso
-    process.start()
+    # Obtener los ISBN desde la base de datos
+    isbns = get_isbns_from_db()
+
+    # Ejecutar múltiples spiders
+    run_multiple_crawls(isbns)
+    reactor.run()

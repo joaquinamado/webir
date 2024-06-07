@@ -1,3 +1,5 @@
+import 'package:webir_frontend/models/book_score.dart';
+
 class Book {
   Book({
     required this.id,
@@ -5,7 +7,7 @@ class Book {
     this.author,
     this.description,
     this.price,
-    this.isbn,
+    this.score,
   });
 
   final String id;
@@ -13,24 +15,24 @@ class Book {
   final String? author;
   final String? description;
   final double? price;
-  final List<String>? isbn;
+  final BookScore? score;
 
   factory Book.fromJson(Map<String, dynamic> json) => Book(
-        id: json["id"],
+        id: json["isbn"],
         title: json["title"],
         author: json["author"],
         description: json["description"],
         price: json["price"].toDouble(),
-        isbn: List<String>.from(json["isbn"].map((x) => x)),
+        score: json["score"] != null ? BookScore.fromJson(json["score"]) : null,
       );
 
   Map<String, dynamic> toJson() => {
-        "id": id,
+        "isbn": id,
         "title": title,
         "author": author,
         "description": description,
         "price": price,
-        "isbn": List<dynamic>.from(isbn!.map((x) => x)),
+        "score": score?.toJson(),
       };
 
   Book copyWith({
@@ -39,7 +41,7 @@ class Book {
     String? author,
     String? description,
     double? price,
-    List<String>? isbn,
+    BookScore? score,
   }) {
     return Book(
       id: id ?? this.id,
@@ -47,7 +49,7 @@ class Book {
       author: author ?? this.author,
       description: description ?? this.description,
       price: price ?? this.price,
-      isbn: isbn ?? this.isbn,
+      score: score ?? this.score,
     );
   }
 }

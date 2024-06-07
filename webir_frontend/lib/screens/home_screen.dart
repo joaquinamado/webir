@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:webir_frontend/api/call_api.dart';
 import 'package:webir_frontend/constants/colors.dart';
 import 'package:webir_frontend/models/filter.dart';
 import 'package:webir_frontend/screens/search_results_screen.dart';
@@ -167,10 +168,11 @@ class _HomeState extends ConsumerState<Home> {
     );
   }
 
-  void _searchBooks(String text) {
+  void _searchBooks(String text) async {
     ref.read(filterNotifierProvider.notifier).setMonthIndex(Filter(
         filterBy: _selectedFilter,
         priceMin: _minPrice,
         priceMax: _maxPrice == 1000 ? double.infinity : _maxPrice));
+    await getBooks(text);
   }
 }

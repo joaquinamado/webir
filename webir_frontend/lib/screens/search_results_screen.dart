@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webir_frontend/models/book.dart';
+import 'package:webir_frontend/models/book_score.dart';
 import 'package:webir_frontend/screens/widgets/book_card.dart';
 import 'package:webir_frontend/state/filter_state.dart';
 import 'package:webir_frontend/widgets/appbar.dart';
@@ -20,6 +21,20 @@ class _SearchResultsState extends ConsumerState<SearchResults> {
       title: 'The Great Gatsby',
       author: 'F. Scott Fitzgerald',
       price: 9.99,
+      score: BookScore(
+        id: '1',
+        stars: 4.5,
+        fiveStarsQuantity: 100,
+        fiveStarsPorcent: 50,
+        fourStarsQuantity: 50,
+        fourStarsPorcent: 25,
+        threeStarsQuantity: 25,
+        threeStarsPorcent: 12.5,
+        twoStarsQuantity: 10,
+        twoStarsPorcent: 5,
+        oneStarsQuantity: 15,
+        oneStarsPorcent: 7.5,
+      ),
     ),
     Book(
       id: '2',

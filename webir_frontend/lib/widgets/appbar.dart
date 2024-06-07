@@ -16,7 +16,7 @@ class _BSAppbarState extends State<BSAppbar> {
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: BSConstants.tertiaryColor,
-      title: const Text('BookSearch',
+      title: const Text('Busqueda de Libros',
           style: TextStyle(color: Colors.white, fontSize: 24.0)),
     );
   }

@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class GoogleBook(models.Model):
+class GoogleBooks(models.Model):
     isbn = models.CharField(max_length=13, primary_key=True)
     titulo = models.CharField(max_length=100)
     subtitulo = models.CharField(max_length=100, blank=True, null=True)
@@ -16,16 +16,16 @@ class GoogleBook(models.Model):
         return str(self.titulo)
 
 
-class Autor(models.Model):
-    isbn = models.ForeignKey(GoogleBook, on_delete=models.CASCADE)
+class Autores(models.Model):
+    isbn = models.ForeignKey(GoogleBooks, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
 
     def __str__(self):
         return str(self.nombre)
 
 
-class Categoria(models.Model):
-    isbn = models.ForeignKey(GoogleBook, on_delete=models.CASCADE)
+class Categorias(models.Model):
+    isbn = models.ForeignKey(GoogleBooks, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
 
     def __str__(self):

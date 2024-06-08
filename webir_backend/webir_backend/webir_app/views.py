@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from .models import GoogleBook
+from .models import GoogleBooks
 
 # Create your views here.
 
@@ -18,7 +18,10 @@ def books(request):
         return JsonResponse({"error": "Invalid request, 'book' parameter is required"}, status=400)
 
     print(book)
-    bookResult = GoogleBook.objects.filter(titulo__icontains=book)
+    allBooks = GoogleBooks.objects.all()
+    print(allBooks)
+    bookResult = GoogleBooks.objects.filter(titulo__icontains='Yoga')
+    print(bookResult)
     bookData = list(bookResult.values())
     print(bookData)
     if bookData == []:

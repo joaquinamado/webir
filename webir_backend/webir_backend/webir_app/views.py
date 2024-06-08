@@ -18,10 +18,7 @@ def books(request):
         return JsonResponse({"error": "Invalid request, 'book' parameter is required"}, status=400)
 
     print(book)
-    allBooks = GoogleBooks.objects.all()
-    print(allBooks)
-    bookResult = GoogleBooks.objects.filter(titulo__icontains='Yoga')
-    print(bookResult)
+    bookResult = GoogleBooks.objects.filter(titulo__icontains=book)
     bookData = list(bookResult.values())
     print(bookData)
     if bookData == []:

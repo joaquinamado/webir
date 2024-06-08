@@ -12,6 +12,9 @@ class GoogleBooks(models.Model):
     imagen = models.TextField(blank=True, null=True)
     idioma = models.CharField(max_length=10, blank=True, null=True)
 
+    class Meta:
+        db_table = 'googlebooks'
+
     def __str__(self) -> str:
         return str(self.titulo)
 
@@ -20,6 +23,9 @@ class Autores(models.Model):
     isbn = models.ForeignKey(GoogleBooks, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
 
+    class Meta:
+        db_table = 'autores'
+
     def __str__(self):
         return str(self.nombre)
 
@@ -27,6 +33,9 @@ class Autores(models.Model):
 class Categorias(models.Model):
     isbn = models.ForeignKey(GoogleBooks, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'categorias'
 
     def __str__(self):
         return str(self.nombre)

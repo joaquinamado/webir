@@ -18,7 +18,7 @@ class BookCard extends StatelessWidget {
         child: ListTile(
           title: Text(book.title ?? ''),
           subtitle: Text(book.author ?? ''),
-          trailing: Text(book.price.toString()),
+          trailing: Text(book.price != null ? book.price.toString() : ''),
         ),
       ),
     );

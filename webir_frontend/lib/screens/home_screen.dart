@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webir_frontend/api/call_api.dart';
 import 'package:webir_frontend/constants/colors.dart';
+import 'package:webir_frontend/models/book.dart';
 import 'package:webir_frontend/models/filter.dart';
 import 'package:webir_frontend/screens/search_results_screen.dart';
+import 'package:webir_frontend/state/book_state.dart';
 import 'package:webir_frontend/state/filter_state.dart';
 import 'package:webir_frontend/widgets/appbar.dart';
 import 'package:webir_frontend/widgets/elevated_button.dart';
@@ -32,7 +34,7 @@ class _HomeState extends ConsumerState<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BSAppbar(),
+      appBar: const BSAppbar(onPressed: null),
       body: Center(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -52,7 +54,7 @@ class _HomeState extends ConsumerState<Home> {
                     const SizedBox(height: 20),
                     BSElevatedButton(
                         label: 'Search',
-                        onPressed: () {
+                        onPressed: () async {
                           if (controller.text.isEmpty) {
                             showDialog(
                                 context: context,
@@ -173,6 +175,7 @@ class _HomeState extends ConsumerState<Home> {
         filterBy: _selectedFilter,
         priceMin: _minPrice,
         priceMax: _maxPrice == 1000 ? double.infinity : _maxPrice));
-    await getBooks(text);
+    List<Book> books = await getBooks(text);
+    ref.read(bookNotifierProvider.notifier).setBooks(books);
   }
 }

@@ -1,6 +1,35 @@
 from django.db import models
 
 
+class GoodReads(models.Model):
+    isbn = models.CharField(max_length=13, primary_key=True)
+    titulo = models.CharField(max_length=100)
+    autor = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)  
+    stars = models.FloatField(blank=True, null=True)
+    five_stars_cantidad = models.IntegerField(blank=True, null=True)
+    five_stars_porcentaje = models.FloatField(blank=True, null=True)
+    four_stars_cantidad = models.IntegerField(blank=True, null=True)
+    four_stars_porcentaje = models.FloatField(blank=True, null=True)
+    three_stars_cantidad = models.IntegerField(blank=True, null=True)
+    three_stars_porcentaje = models.FloatField(blank=True, null=True)
+    two_stars_cantidad = models.IntegerField(blank=True, null=True)
+    two_stars_porcentaje = models.FloatField(blank=True, null=True)
+    one_stars_cantidad = models.IntegerField(blank=True, null=True)
+    one_stars_porcentaje = models.FloatField(blank=True, null=True)
+    precio_kindle = models.FloatField(blank=True, null=True)
+    scraped_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'good_reads'
+
+    def __str__(self) -> str:
+        return str(self.titulo)
+
+
+
+
+
 class GoogleBooks(models.Model):
     isbn = models.CharField(max_length=13, primary_key=True)
     titulo = models.CharField(max_length=100)
@@ -20,7 +49,9 @@ class GoogleBooks(models.Model):
 
 
 class Autores(models.Model):
-    isbn = models.ForeignKey(GoogleBooks, on_delete=models.CASCADE)
+    id = models.AutoField(primary_key=True)
+    isbn = models.TextField(blank=True, null=True)
+    # isbn = models.ForeignKey(GoogleBooks, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
 
     class Meta:
@@ -31,6 +62,7 @@ class Autores(models.Model):
 
 
 class Categorias(models.Model):
+    id = models.AutoField(primary_key=True)
     isbn = models.ForeignKey(GoogleBooks, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
 

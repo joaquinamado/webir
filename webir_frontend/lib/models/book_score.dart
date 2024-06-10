@@ -28,18 +28,28 @@ class BookScore {
   final double? oneStarsPorcent;
 
   factory BookScore.fromJson(Map<String, dynamic> json) => BookScore(
-        id: json["id"],
-        stars: json["stars"].toDouble(),
-        fiveStarsQuantity: json["fiveStarsQuantity"],
-        fiveStarsPorcent: json["fiveStarsPorcent"].toDouble(),
-        fourStarsQuantity: json["fourStarsQuantity"],
-        fourStarsPorcent: json["fourStarsPorcent"].toDouble(),
-        threeStarsQuantity: json["threeStarsQuantity"],
-        threeStarsPorcent: json["threeStarsPorcent"].toDouble(),
-        twoStarsQuantity: json["twoStarsQuantity"],
-        twoStarsPorcent: json["twoStarsPorcent"].toDouble(),
-        oneStarsQuantity: json["oneStarsQuantity"],
-        oneStarsPorcent: json["oneStarsPorcent"].toDouble(),
+        id: json["isbn"] ?? '',
+        stars: json["stars"] != null ? json["stars"].toDouble() : 0.0,
+        fiveStarsQuantity: json["five_stars_cantidad"] ?? 0,
+        fiveStarsPorcent: json["five_stars_porcentaje"] != null
+            ? json["five_stars_porcentaje"].toDouble()
+            : 0.0,
+        fourStarsQuantity: json["four_stars_cantidad"] ?? 0,
+        fourStarsPorcent: json["four_stars_porcentaje"] != null
+            ? json["four_stars_porcentaje"].toDouble()
+            : 0.0,
+        threeStarsQuantity: json["three_stars_cantidad"] ?? 0,
+        threeStarsPorcent: json["three_stars_porcentaje"] != null
+            ? json["three_stars_porcentaje"].toDouble()
+            : 0.0,
+        twoStarsQuantity: json["two_stars_cantidad"] ?? 0,
+        twoStarsPorcent: json["two_stars_porcentaje"] != null
+            ? json["two_stars_porcentaje"].toDouble()
+            : 0.0,
+        oneStarsQuantity: json["one_stars_cantidad"] ?? 0,
+        oneStarsPorcent: json["one_stars_porcentaje"] != null
+            ? json["one_stars_porcentaje"].toDouble()
+            : 0.0,
       );
 
   Map<String, dynamic> toJson() => {

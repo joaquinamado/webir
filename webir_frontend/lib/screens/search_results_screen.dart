@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webir_frontend/models/book.dart';
 import 'package:webir_frontend/models/book_score.dart';
 import 'package:webir_frontend/screens/widgets/book_card.dart';
+import 'package:webir_frontend/state/book_state.dart';
 import 'package:webir_frontend/state/filter_state.dart';
 import 'package:webir_frontend/widgets/appbar.dart';
 
@@ -15,98 +16,44 @@ class SearchResults extends ConsumerStatefulWidget {
 }
 
 class _SearchResultsState extends ConsumerState<SearchResults> {
-  final List<Book> books = [
-    Book(
-      id: '1',
-      title: 'The Great Gatsby',
-      author: 'F. Scott Fitzgerald',
-      price: 9.99,
-      score: BookScore(
-        id: '1',
-        stars: 4.5,
-        fiveStarsQuantity: 100,
-        fiveStarsPorcent: 50,
-        fourStarsQuantity: 50,
-        fourStarsPorcent: 25,
-        threeStarsQuantity: 25,
-        threeStarsPorcent: 12.5,
-        twoStarsQuantity: 10,
-        twoStarsPorcent: 5,
-        oneStarsQuantity: 15,
-        oneStarsPorcent: 7.5,
-      ),
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-    Book(
-      id: '2',
-      title: 'ATo Kill a Mockingbird',
-      author: 'Harper Lee',
-      price: 9.99,
-    ),
-  ];
   @override
   Widget build(BuildContext context) {
+    final List<Book>? books = ref.watch(bookNotifierProvider);
+
+    if (books == null) {
+      return Scaffold(
+        appBar: BSAppbar(
+          onPressed: () {
+            ref.read(bookNotifierProvider.notifier).reset();
+            Navigator.pop(context);
+          },
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (books.isEmpty) {
+      return Scaffold(
+        appBar: BSAppbar(
+          onPressed: () {
+            ref.read(bookNotifierProvider.notifier).reset();
+            Navigator.pop(context);
+          },
+        ),
+        body: const Center(
+          child: Text('No se encontraron resultados'),
+        ),
+      );
+    }
     return Scaffold(
-      appBar: const BSAppbar(),
+      appBar: BSAppbar(
+        onPressed: () {
+          ref.read(bookNotifierProvider.notifier).reset();
+          Navigator.pop(context);
+        },
+      ),
       body: Center(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 100),

@@ -16,33 +16,63 @@ class _BookInfoState extends State<BookInfo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BSAppbar(),
-      body: Center(
-        child: Row(
-          children: [
-            Container(
+      appBar: BSAppbar(
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+      body: Stack(
+        children: [
+          Positioned(
+            left: MediaQuery.of(context).size.width * 0.2,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              color: Colors.white,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            right: MediaQuery.of(context).size.width * 0.8,
+            child: Container(
               color: BSConstants.tertiaryColor,
-              width: MediaQuery.of(context).size.height * 0.4,
-              padding: const EdgeInsets.all(16),
-              child: Column(
+            ),
+          ),
+          SingleChildScrollView(
+            child: Center(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStarBars(context),
+                  Container(
+                    color: BSConstants.tertiaryColor,
+                    width: MediaQuery.of(context).size.height * 0.4,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStarBars(context),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildBookTitle(context),
+                        const Divider(),
+                        _buildBookInfo(context),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-            Expanded(
-              child: Column(
-                children: [
-                  _buildBookTitle(context),
-                  const Divider(),
-                  _buildBookInfo(context),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -50,8 +80,17 @@ class _BookInfoState extends State<BookInfo> {
   Widget _buildBookTitle(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Text(widget.book.title ?? '',
-          style: const TextStyle(fontSize: 42, fontWeight: FontWeight.bold)),
+      child: Column(
+        children: [
+          Text(widget.book.title ?? '',
+              style:
+                  const TextStyle(fontSize: 42, fontWeight: FontWeight.bold)),
+          const SizedBox(width: 10),
+          Text(widget.book.subtitle ?? '',
+              style:
+                  const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
 
@@ -71,11 +110,25 @@ class _BookInfoState extends State<BookInfo> {
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        widget.book.image != null
+            ? Image.network(widget.book.image ?? '',
+                width: 500, height: 500, fit: BoxFit.cover)
+            : const SizedBox(),
         Text('Autor: ${widget.book.author ?? ''}',
             style: const TextStyle(fontSize: 24)),
-        Text('Precio: ${widget.book.price.toString()}',
-            style: const TextStyle(fontSize: 24)),
+        widget.book.price != null
+            ? Text('Precio: ${widget.book.price.toString()}',
+                style: const TextStyle(fontSize: 24))
+            : const SizedBox(),
         Text('ISBN: ${widget.book.id.toString()}',
+            style: const TextStyle(fontSize: 24)),
+        Text('Editorial: ${widget.book.editorial ?? ''}',
+            style: const TextStyle(fontSize: 24)),
+        Text('Fecha de publicación: ${widget.book.fecha ?? ''}',
+            style: const TextStyle(fontSize: 24)),
+        Text('Páginas: ${widget.book.pages?.toString() ?? ''}',
+            style: const TextStyle(fontSize: 24)),
+        Text('Idioma: ${widget.book.language ?? ''}',
             style: const TextStyle(fontSize: 24)),
       ],
     );
@@ -87,8 +140,22 @@ class _BookInfoState extends State<BookInfo> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Descripción:', style: TextStyle(fontSize: 24)),
-        Text(widget.book.description ?? '',
-            style: const TextStyle(fontSize: 16)),
+        Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          width: 600,
+          child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(widget.book.description ?? '',
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 50,
+                      softWrap: true,
+                      style: const TextStyle(fontSize: 16)),
+                ),
+              ]),
+        ),
       ],
     );
   }

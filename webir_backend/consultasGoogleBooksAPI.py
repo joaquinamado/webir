@@ -7,11 +7,11 @@ import psycopg2
 load_dotenv()
 API_KEY = str(os.getenv("API_KEY"))
 URL_GOOGLE_BOOKS = "https://www.googleapis.com/books/v1/"
-GENERO = "terror"
+GENERO = "PHILOSOPHY"
 
 def queryGoogleBooksApi(start_index):
     print("Consultando la API de Google Books...")
-    response = requests.get("https://www.googleapis.com/books/v1/volumes?q=subject:terror&startIndex="+str(start_index)+"&maxResults=40&key=AIzaSyAF1lpq-_SjjC5aNCDDOAdnpLZ2Bx4BuQo")
+    response = requests.get(URL_GOOGLE_BOOKS + "volumes?q=subject:"+ GENERO+ "&startIndex="+str(start_index)+"&maxResults=40&key=AIzaSyAF1lpq-_SjjC5aNCDDOAdnpLZ2Bx4BuQo")
     json_response = response.json()
     print("Consulta exitosa")
     return json_response
@@ -56,6 +56,8 @@ def apiResponseToBookInfo(start_index):
     size = 0
     for item in json_response["items"]:
         size += 1
+        if "industryIdentifiers" not in item["volumeInfo"]:
+            continue
         if get_book_isbn13(item["volumeInfo"]["industryIdentifiers"]) == None:
             continue
         if "authors" not in item["volumeInfo"]:

@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from .models import GoogleBooks, GoodReads, Autores
+from .models import GoogleBooks, GoodReads, Autores, Categorias
 
 
 def home(_):
@@ -36,6 +36,12 @@ def books(request):
         for autor in autoresResult:
             autores.append(autor.nombre)
 
+    categorias = []
+    for book in bookResult:
+        categoriasResult = Categorias.objects.filter(isbn=book.isbn)
+        for categoria in categoriasResult:
+            categorias.append(categoria.nombre)
+
     data = []
     for book in bookResult:
         bookReview = GoodReads.objects.filter(isbn=book.isbn)
@@ -51,6 +57,7 @@ def books(request):
                 "imagen": book.imagen,
                 "idioma": book.idioma,
                 "autor": autores[0],
+                "categoria": categorias[0],
                 "score": {
                     "stars": bookReview[0].stars,
                     "five_stars_cantidad": bookReview[0].five_stars_cantidad,
@@ -79,6 +86,7 @@ def books(request):
                 "imagen": book.imagen,
                 "idioma": book.idioma,
                 "autor": autores[0],
+                "categoria": categorias[0],
             })
 
     print(data)
@@ -86,3 +94,19 @@ def books(request):
         return JsonResponse({"error": "No books found"}, status=404)
 
     return JsonResponse(data, safe=False, status=200)
+
+def getAllAuthors(request):
+    if request.method != 'GET':
+        return JsonResponse({"error": "Invalid request method"}, status=400)
+    
+    author_names = Autores.objects.values_list('nombre', flat=True).distinct()
+
+    return JsonResponse(author_names, safe=False, status=200)
+
+def getAllCategories(request):
+    if request.method != 'GET':
+        return JsonResponse({"error": "Invalid request method"}, status=400)
+    
+    categories_names = Categorias.objects.values_list('nombre', flat=True).distinct()
+
+    return JsonResponse(categories_names, safe=False, status=200)

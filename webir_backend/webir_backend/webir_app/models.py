@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Func
 
 
 class GoodReads(models.Model):
@@ -27,7 +28,16 @@ class GoodReads(models.Model):
         return str(self.titulo)
 
 
+class TrigramSimilarity(Func):
+    function = 'similarity'
+    template = 'similarity(%(expressions)s)'
 
+
+class MyModelQuerySet(models.QuerySet):
+    def search(self, query):
+        return self.annotate(
+            similarity=TrigramSimilarity('name', models.Value(query))
+        ).filter(similarity__gt=0.3).order_by('-similarity')
 
 
 class GoogleBooks(models.Model):
@@ -40,6 +50,8 @@ class GoogleBooks(models.Model):
     paginas = models.IntegerField(blank=True, null=True)
     imagen = models.TextField(blank=True, null=True)
     idioma = models.CharField(max_length=10, blank=True, null=True)
+
+    #objects = MyModelQuerySet.as_manager()
 
     class Meta:
         db_table = 'googlebooks'
@@ -63,7 +75,8 @@ class Autores(models.Model):
 
 class Categorias(models.Model):
     id = models.AutoField(primary_key=True)
-    isbn = models.ForeignKey(GoogleBooks, on_delete=models.CASCADE)
+    isbn = models.TextField(blank=True, null=True)
+    #isbn = models.ForeignKey(GoogleBooks, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
 
     class Meta:

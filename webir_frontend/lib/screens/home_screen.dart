@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webir_frontend/api/call_api.dart';
 import 'package:webir_frontend/constants/colors.dart';
 import 'package:webir_frontend/models/book.dart';
+import 'package:webir_frontend/models/category.dart';
 import 'package:webir_frontend/models/filter.dart';
 import 'package:webir_frontend/screens/search_results_screen.dart';
 import 'package:webir_frontend/state/book_state.dart';
@@ -25,14 +26,43 @@ class _HomeState extends ConsumerState<Home> {
   int _selectedFilter = 0;
   double _minPrice = 0;
   double _maxPrice = double.infinity;
+  final List<DropdownMenuEntry> _categories = [];
 
   @override
   void initState() {
     super.initState();
   }
 
+  void _getCategories() {
+    getCategories().then((value) {
+      int index = 0;
+      for (String category in value) {
+        _categories.add(DropdownMenuEntry(
+          label: category,
+          value: index,
+        ));
+        index++;
+      }
+      setState(() {});
+    }).onError((error, stackTrace) {
+      print('Error getting categories: $error');
+    });
+    print('Cat ${_categories.length}');
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('Building home');
+    if (_categories.isEmpty) {
+      _getCategories();
+      return const Scaffold(
+        appBar: BSAppbar(onPressed: null),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: const BSAppbar(onPressed: null),
       body: Center(
@@ -97,41 +127,35 @@ class _HomeState extends ConsumerState<Home> {
                     ),
                   ),
                 ),
-                Row(
-                  children: [
-                    BSElevatedButton(
-                        label: 'Titulo',
-                        isSelected: _selectedFilter == 0,
-                        onPressed: () {
-                          setState(() {
-                            _selectedFilter = 0;
-                          });
-                        },
-                        width: 120,
-                        height: 50),
-                    const SizedBox(width: 10),
-                    BSElevatedButton(
-                        label: 'Categoria',
-                        isSelected: _selectedFilter == 1,
-                        onPressed: () {
-                          setState(() {
-                            _selectedFilter = 1;
-                          });
-                        },
-                        width: 120,
-                        height: 50),
-                    const SizedBox(width: 10),
-                    BSElevatedButton(
-                        label: 'Autor',
-                        isSelected: _selectedFilter == 2,
-                        onPressed: () {
-                          setState(() {
-                            _selectedFilter = 2;
-                          });
-                        },
-                        width: 120,
-                        height: 50),
-                  ],
+                DropdownMenu(
+                  menuStyle: const MenuStyle(
+                    backgroundColor:
+                        WidgetStatePropertyAll(BSConstants.tertiaryColor),
+                  ),
+                  label: const Text('Categorias'),
+                  dropdownMenuEntries: _categories,
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  child: const Text(
+                    'Autor',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  child: const Text(
+                    'Precio',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 SizedBox(
                   width: 400,

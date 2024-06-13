@@ -40,7 +40,9 @@ class Book {
         language: json["idioma"],
         author: json["autor"],
         description: json["descripcion"],
-        price: json["precio"] != null ? json["precio"].toDouble() : null,
+        price: json["precio"] != null
+            ? double.parse(json["precio"] as String)
+            : null,
         score: json["score"] != null ? BookScore.fromJson(json["score"]) : null,
       );
 

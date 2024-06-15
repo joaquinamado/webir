@@ -149,15 +149,9 @@ def books(request):
     for book in bookResult:
         bookReview = GoodReads.objects.filter(isbn=book.isbn)
         if bookReview:
-            precio_kindle = 0
+            precio = 0
             if bookReview[0].precio_kindle:
-                precio_kindle = str(bookReview[0].precio_kindle.split(" ")[1])
-                precio_kindle = precio_kindle.replace("$", "")
-                try:
-                    int(precio_kindle)
-                except ValueError:
-                    precio_kindle = 0
-                print(precio_kindle)
+                precio= str(bookReview[0].price)
             data.append({
                 "isbn": book.isbn,
                 "titulo": book.titulo,
@@ -169,7 +163,7 @@ def books(request):
                 "imagen": book.imagen,
                 "idioma": book.idioma,
                 "autor": autores[index],
-                "precio": str(precio_kindle),
+                "precio": precio,
                 "categoria": categorias[index],
                 "score": {
                     "stars": bookReview[0].stars,
@@ -183,7 +177,7 @@ def books(request):
                     "two_stars_porcentaje": bookReview[0].two_stars_porcentaje,
                     "one_stars_cantidad": bookReview[0].one_stars_cantidad,
                     "one_stars_porcentaje": bookReview[0].one_stars_porcentaje,
-                    "precio_kindle": precio_kindle,
+                    "precio_kindle": bookReview[0].price,
                     "scraped_at": bookReview[0].scraped_at
                 }
             })

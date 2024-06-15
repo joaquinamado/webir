@@ -224,9 +224,9 @@ class _HomeState extends ConsumerState<Home> {
           child: RangeSlider(
             divisions: 100,
             values: RangeValues(
-                _minPrice, _maxPrice == double.infinity ? 1000 : _maxPrice),
+                _minPrice, _maxPrice == double.infinity ? 750 : _maxPrice),
             min: 0,
-            max: 1000,
+            max: 750,
             activeColor: BSConstants.tertiaryColor,
             onChanged: (RangeValues values) {
               setState(() {
@@ -244,7 +244,7 @@ class _HomeState extends ConsumerState<Home> {
             children: [
               Text('Min: \$${_minPrice.toStringAsFixed(2)}'),
               Text(
-                  'Max: ${_maxPrice == double.infinity || _maxPrice == 1000 ? 'Unlimited' : '\$${_maxPrice.toStringAsFixed(2)}'}'),
+                  'Max: ${_maxPrice == double.infinity || _maxPrice == 750 ? 'Unlimited' : '\$${_maxPrice.toStringAsFixed(2)}'}'),
             ],
           ),
         ),
@@ -340,7 +340,7 @@ class _HomeState extends ConsumerState<Home> {
         selectedAuthor: _selectedAuthor,
         selectedCategory: _selectedCategory,
         priceMin: _minPrice,
-        priceMax: _maxPrice == 1000 ? double.infinity : _maxPrice,
+        priceMax: _maxPrice == 750 ? double.infinity : _maxPrice,
         fechaInicio: _fechaInicio,
         fechaFin: _fechaFin));
     _maxPrice = double.infinity == _maxPrice ? 1000 : _maxPrice;

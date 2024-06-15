@@ -6,11 +6,24 @@ final filterNotifierProvider =
 
 class FilterNotifier extends StateNotifier<Filter> {
   FilterNotifier()
-      : super(Filter(filterBy: 0, priceMin: 0, priceMax: double.infinity));
+      : super(Filter(
+          selectedCategory: null,
+          selectedAuthor: null,
+          priceMin: 0,
+          priceMax: double.infinity,
+          fechaFin: null,
+          fechaInicio: null,
+        ));
 
   // ignore: use_setters_to_change_properties
   void setMonthIndex(Filter value) => state = value;
 
-  void reset() =>
-      state = Filter(filterBy: 0, priceMin: 0, priceMax: double.infinity);
+  void reset() => state = Filter(
+        selectedAuthor: null,
+        selectedCategory: null,
+        priceMin: 0,
+        priceMax: double.infinity,
+        fechaInicio: null,
+        fechaFin: null,
+      );
 }

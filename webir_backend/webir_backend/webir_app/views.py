@@ -10,31 +10,121 @@ def books(request):
     if request.method != 'GET':
         return JsonResponse({"error": "Invalid request method"}, status=400)
 
-
     req_book = request.GET.get('book', '')
+    req_autor = request.GET.get('autor', '')
+    req_categoria = request.GET.get('categoria', '')
+    req_precioMin = request.GET.get('precioMin', '')
+    req_precioMax = request.GET.get('precioMax', '')
+    req_fechaInicio = request.GET.get('fechaInicio', '')
+    req_fechaFin = request.GET.get('fechaFin', '')
 
-    if req_book == '':
-        return JsonResponse({"error": "Invalid request, 'book' parameter is required"}, status=400)
+    print('Titulo: ' + req_book)
+    print('Autor: ' + req_autor)
+    print('Categoria: ' + req_categoria)
+    print('Precio Min: ' + req_precioMin)
+    print('Precio Max: ' + req_precioMax)
+    print('Fecha Inicio: ' + req_fechaInicio)
+    print('Fecha Fin: ' + req_fechaFin)
 
     isTitle = True
     # Check if the book is an ISBN
     if len(req_book) == 13:
         try:
             isTitle = False
+            int(req_book)
         except ValueError:
             isTitle = True
 
     if isTitle:
-        bookResult = GoogleBooks.objects.raw(
-                """
-                SELECT * FROM googlebooks
-                WHERE similarity(titulo, %s) > 0.1
-                ORDER BY similarity(titulo, %s) DESC
-                """,
-                [req_book, req_book]
+        query = """
+            SELECT * FROM googlebooks
+            """
+        params = []
+        if req_book != '':
+            query += """
+            WHERE similarity(googlebooks.titulo, %s) > 0.1
+            """
+            params.append(req_book)
+        if req_autor != '':
+            if req_book == '':
+                print('LLEGA 1')
+                query += """
+                WHERE googlebooks.isbn IN (
+                    SELECT isbn FROM autores WHERE similarity(autores.nombre, %s) > 0.8
                 )
-        #bookResult = GoogleBooks.objects.filter(titulo__icontains=req_book)
-    else:
+                """
+            else:
+                query += """
+                AND googlebooks.isbn IN (
+                    SELECT isbn FROM autores WHERE similarity(autores.nombre, %s) > 0.8
+                )
+                """
+            params.append(req_autor)
+        if req_categoria != '':
+            if req_book == '' and req_autor == '':
+                query += """
+                WHERE googlebooks.isbn IN (
+                    SELECT isbn FROM categorias WHERE similarity(categorias.nombre, %s) > 0.8
+                )
+                """
+            else:
+                query += """
+                AND googlebooks.isbn IN (
+                    SELECT isbn FROM categorias WHERE similarity(categorias.nombre, %s) > 0.8
+                )
+                """
+            params.append(req_categoria)
+        if (req_precioMin != '0' or req_precioMax != '1000'):
+            if req_book == '' and req_autor == '' and req_categoria == '':
+                query += """
+                WHERE googlebooks.isbn IN (
+                    SELECT isbn FROM good_reads WHERE price >= %s AND price <= %s
+                )
+                """
+            else:
+                query += """
+                AND googlebooks.isbn IN (
+                    SELECT isbn FROM good_reads WHERE price >= %s AND price <= %s
+                )
+                """
+            params.append(req_precioMin)
+            params.append(req_precioMax)
+
+        if (req_fechaInicio != '' or req_fechaFin != ''):
+            if (req_book == '' and req_autor == '' and req_categoria == ''
+                and req_precioMin == '0' and req_precioMax == '1000'):
+                query += """
+                WHERE googlebooks.isbn IN (
+                    SELECT isbn FROM googlebooks WHERE
+                    TO_DATE(fecha_publicacion, 'YYYY-MM-DD') >=
+                    TO_DATE(%s, 'YYYY-MM-DD')
+                    AND TO_DATE(fecha_publicacion, 'YYYY-MM-DD') <=
+                    TO_DATE(%s, 'YYYY-MM-DD')
+                )
+                """
+                params.append(req_fechaInicio)
+                params.append(req_fechaFin)
+            else:
+                query += """
+                AND googlebooks.isbn IN (
+                    SELECT isbn FROM googlebooks WHERE 
+                    TO_DATE(fecha_publicacion, 'YYYY-MM-DD') 
+                    >= TO_DATE(%s, 'YYYY-MM-DD') 
+                    AND TO_DATE(fecha_publicacion, 'YYYY-MM-DD') 
+                    <= TO_DATE(%s, 'YYYY-MM-DD')
+                )
+                """
+                params.append(req_fechaInicio)
+                params.append(req_fechaFin)
+        if (req_book != ''):
+            query += """
+            ORDER BY similarity(googlebooks.titulo, %s) DESC
+            """
+            params.append(req_book)
+        bookResult = GoogleBooks.objects.raw(query, params)
+        print('LLEGA')
+        print(bookResult)
+    if not isTitle:
         isbn = int(req_book)
         bookResult = GoogleBooks.objects.filter(isbn=isbn)
 
@@ -63,6 +153,10 @@ def books(request):
             if bookReview[0].precio_kindle:
                 precio_kindle = str(bookReview[0].precio_kindle.split(" ")[1])
                 precio_kindle = precio_kindle.replace("$", "")
+                try:
+                    int(precio_kindle)
+                except ValueError:
+                    precio_kindle = 0
                 print(precio_kindle)
             data.append({
                 "isbn": book.isbn,
@@ -111,6 +205,7 @@ def books(request):
             })
             index += 1
 
+    print('DATA: ')
     print(data)
     if data == []:
         return JsonResponse({"error": "No books found"}, status=404)
@@ -121,7 +216,7 @@ def books(request):
 def authors(request):
     if request.method != 'GET':
         return JsonResponse({"error": "Invalid request method"}, status=400)
-  
+
     author_names = Autores.objects.values_list('nombre', flat=True).distinct()
     authors = list(author_names)
 
@@ -131,9 +226,9 @@ def authors(request):
 def categories(request):
     if request.method != 'GET':
         return JsonResponse({"error": "Invalid request method"}, status=400)
- 
-    categories_names = Categorias.objects.values_list('nombre', flat=True).distinct()
-    categories = list(categories_names)
 
+    categories_names = Categorias.objects.values_list('nombre',
+                                                      flat=True).distinct()
+    categories = list(categories_names)
 
     return JsonResponse(categories, safe=False, status=200)

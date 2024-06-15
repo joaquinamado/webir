@@ -74,6 +74,7 @@ class _SearchResultsState extends ConsumerState<SearchResults> {
               Container(
                 margin: const EdgeInsets.all(20),
                 width: 500,
+                height: 500,
                 padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
@@ -85,15 +86,32 @@ class _SearchResultsState extends ConsumerState<SearchResults> {
                       style:
                           TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
-                  ref.watch(filterNotifierProvider).filterBy == 0
-                      ? const Text('Titulo', style: TextStyle(fontSize: 20))
-                      : ref.watch(filterNotifierProvider).filterBy == 1
-                          ? const Text('Categoria',
-                              style: TextStyle(fontSize: 20))
-                          : const Text('Autor', style: TextStyle(fontSize: 20)),
+                  Text(
+                      ref.read(filterNotifierProvider).selectedCategory == null
+                          ? 'Categoría: Todas'
+                          : 'Categoría: ${ref.read(filterNotifierProvider).selectedCategory}',
+                      style: const TextStyle(fontSize: 20)),
+                  const SizedBox(height: 20),
+                  Text(
+                      ref.read(filterNotifierProvider).selectedAuthor == null
+                          ? 'Autor: Todos'
+                          : 'Autor: ${ref.read(filterNotifierProvider).selectedAuthor}',
+                      style: const TextStyle(fontSize: 20)),
                   const SizedBox(height: 20),
                   Text(
                       'Precio: \$${ref.watch(filterNotifierProvider).priceMin!.toStringAsFixed(2)} - ${ref.watch(filterNotifierProvider).priceMax == double.infinity ? '∞' : '\$${ref.watch(filterNotifierProvider).priceMax!.toStringAsFixed(2)}'}',
+                      style: const TextStyle(fontSize: 20)),
+                  const SizedBox(height: 20),
+                  Text(
+                      ref.read(filterNotifierProvider).fechaInicio == null
+                          ? 'Fecha Inicio: Todas'
+                          : 'Fecha Inicio: ${ref.read(filterNotifierProvider).fechaInicio}',
+                      style: const TextStyle(fontSize: 20)),
+                  const SizedBox(height: 20),
+                  Text(
+                      ref.read(filterNotifierProvider).fechaFin == null
+                          ? 'Fecha Fin: Todas'
+                          : 'Fecha Fin: ${ref.read(filterNotifierProvider).fechaFin}',
                       style: const TextStyle(fontSize: 20)),
                 ]),
               ),

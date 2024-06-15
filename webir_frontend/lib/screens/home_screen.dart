@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webir_frontend/api/call_api.dart';
 import 'package:webir_frontend/constants/colors.dart';
 import 'package:webir_frontend/models/book.dart';
-import 'package:webir_frontend/models/category.dart';
 import 'package:webir_frontend/models/filter.dart';
 import 'package:webir_frontend/screens/search_results_screen.dart';
 import 'package:webir_frontend/state/book_state.dart';
 import 'package:webir_frontend/state/filter_state.dart';
 import 'package:webir_frontend/widgets/appbar.dart';
 import 'package:webir_frontend/widgets/elevated_button.dart';
-import 'package:webir_frontend/widgets/search_button.dart';
 import 'package:webir_frontend/widgets/textform_field.dart';
 
 class Home extends ConsumerStatefulWidget {
@@ -23,14 +22,20 @@ class Home extends ConsumerStatefulWidget {
 
 class _HomeState extends ConsumerState<Home> {
   final TextEditingController controller = TextEditingController();
-  int _selectedFilter = 0;
   double _minPrice = 0;
   double _maxPrice = double.infinity;
+  String? _selectedCategory;
+  String? _selectedAuthor;
+  String? _fechaInicio;
+  String? _fechaFin;
   final List<DropdownMenuEntry> _categories = [];
+  final List<DropdownMenuEntry> _authors = [];
 
   @override
   void initState() {
     super.initState();
+    _getCategories();
+    _getAuthors();
   }
 
   void _getCategories() {
@@ -47,14 +52,27 @@ class _HomeState extends ConsumerState<Home> {
     }).onError((error, stackTrace) {
       print('Error getting categories: $error');
     });
-    print('Cat ${_categories.length}');
+  }
+
+  void _getAuthors() {
+    getAuthors().then((value) {
+      int index = 0;
+      for (String author in value) {
+        _authors.add(DropdownMenuEntry(
+          label: author,
+          value: index,
+        ));
+        index++;
+      }
+      setState(() {});
+    }).onError((error, stackTrace) {
+      print('Error getting authors: $error');
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    print('Building home');
-    if (_categories.isEmpty) {
-      _getCategories();
+    if (_categories.isEmpty || _authors.isEmpty) {
       return const Scaffold(
         appBar: BSAppbar(onPressed: null),
         body: Center(
@@ -85,24 +103,6 @@ class _HomeState extends ConsumerState<Home> {
                     BSElevatedButton(
                         label: 'Search',
                         onPressed: () async {
-                          if (controller.text.isEmpty) {
-                            showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                      title: const Text('Error'),
-                                      content: const Text(
-                                          'Please enter a search term'),
-                                      actions: <Widget>[
-                                        TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: const Text('OK'))
-                                      ]);
-                                });
-                            return;
-                          }
                           // Perform search
                           _searchBooks(controller.text);
 
@@ -116,76 +116,41 @@ class _HomeState extends ConsumerState<Home> {
               ),
             ]),
             Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  child: const Text(
-                    'Filtrar',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
+                Row(children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    child: const Text(
+                      'Filtrar',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                DropdownMenu(
-                  menuStyle: const MenuStyle(
-                    backgroundColor:
-                        WidgetStatePropertyAll(BSConstants.tertiaryColor),
-                  ),
-                  label: const Text('Categorias'),
-                  dropdownMenuEntries: _categories,
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  child: const Text(
-                    'Autor',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  child: const Text(
-                    'Precio',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 400,
-                  height: 40,
-                  child: RangeSlider(
-                    values: RangeValues(_minPrice,
-                        _maxPrice == double.infinity ? 1000 : _maxPrice),
-                    min: 0,
-                    max: 1000,
-                    activeColor: BSConstants.tertiaryColor,
-                    onChanged: (RangeValues values) {
+                  const SizedBox(width: 20),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () {
+                      ref.read(filterNotifierProvider.notifier).reset();
                       setState(() {
-                        _minPrice = values.start;
-                        _maxPrice = values.end;
+                        _selectedCategory = null;
+                        _selectedAuthor = null;
+                        _minPrice = 0;
+                        _maxPrice = double.infinity;
+                        _fechaInicio = null;
+                        _fechaFin = null;
                       });
                     },
                   ),
-                ),
-                SizedBox(
-                  width: 400,
-                  height: 40,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Min: \$${_minPrice.toStringAsFixed(2)}'),
-                      Text(
-                          'Max: ${_maxPrice == double.infinity || _maxPrice == 1000 ? 'Unlimited' : '\$${_maxPrice.toStringAsFixed(2)}'}'),
-                    ],
-                  ),
-                ),
+                ]),
+                _buildCategoriasAndAutor(),
+                const SizedBox(width: 10),
+                _buildPrecio(),
+                const SizedBox(height: 10),
+                _buildFechas(),
               ],
             )
           ],
@@ -194,12 +159,205 @@ class _HomeState extends ConsumerState<Home> {
     );
   }
 
+  Widget _buildCategoriasAndAutor() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        DropdownMenu(
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(Colors.grey[200]),
+            fixedSize: const WidgetStatePropertyAll(Size(200, 300)),
+          ),
+          label: const Text('Categorias'),
+          dropdownMenuEntries: _categories,
+          initialSelection: _selectedCategory == null
+              ? null
+              : _categories
+                  .indexWhere((element) => element.label == _selectedCategory),
+          onSelected: (index) {
+            setState(() {
+              _selectedCategory = _categories[index as int].label;
+            });
+          },
+        ),
+        const SizedBox(height: 10),
+        DropdownMenu(
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(Colors.grey[200]),
+            fixedSize: const WidgetStatePropertyAll(Size(200, 300)),
+          ),
+          label: const Text('Autores'),
+          initialSelection: _selectedAuthor == null
+              ? null
+              : _authors
+                  .indexWhere((element) => element.label == _selectedAuthor),
+          dropdownMenuEntries: _authors,
+          onSelected: (index) {
+            setState(() {
+              _selectedAuthor = _authors[index as int].label;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrecio() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 10),
+          child: const Text(
+            'Precio',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 400,
+          height: 40,
+          child: RangeSlider(
+            divisions: 100,
+            values: RangeValues(
+                _minPrice, _maxPrice == double.infinity ? 1000 : _maxPrice),
+            min: 0,
+            max: 1000,
+            activeColor: BSConstants.tertiaryColor,
+            onChanged: (RangeValues values) {
+              setState(() {
+                _minPrice = values.start;
+                _maxPrice = values.end;
+              });
+            },
+          ),
+        ),
+        SizedBox(
+          width: 400,
+          height: 40,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Min: \$${_minPrice.toStringAsFixed(2)}'),
+              Text(
+                  'Max: ${_maxPrice == double.infinity || _maxPrice == 1000 ? 'Unlimited' : '\$${_maxPrice.toStringAsFixed(2)}'}'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFechas() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 400,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                children: [
+                  const Text('Fecha de publicación desde:'),
+                  IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: () async {
+                      DateTime? fechaInicio = await showDialog(
+                          context: context,
+                          builder: (context) {
+                            return DatePickerDialog(
+                                firstDate: DateTime(1000),
+                                lastDate: DateTime.now()
+                                    .add(const Duration(days: 1)));
+                          });
+                      if (fechaInicio != null) {
+                        setState(() {
+                          DateFormat formatter = DateFormat('yyyy-MM-dd');
+                          _fechaInicio = formatter.format(fechaInicio);
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              Container(
+                  margin: const EdgeInsets.only(top: 30),
+                  child: Text('Fecha Inicio: ${_fechaInicio ?? ''}')),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: 400,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
+                children: [
+                  const Text('Fecha de publicación hasta:'),
+                  IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: () async {
+                      DateTime? fechaFin = await showDialog(
+                          context: context,
+                          builder: (context) {
+                            return DatePickerDialog(
+                                firstDate: DateTime(1000),
+                                lastDate: DateTime.now()
+                                    .add(const Duration(days: 1)));
+                          });
+                      if (fechaFin != null) {
+                        setState(() {
+                          DateFormat formatter = DateFormat('yyyy-MM-dd');
+                          _fechaFin = formatter.format(fechaFin);
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              Container(
+                margin: const EdgeInsets.only(top: 30),
+                child: Text('Fecha Fin: ${_fechaFin ?? ''}'),
+              )
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   void _searchBooks(String text) async {
     ref.read(filterNotifierProvider.notifier).setMonthIndex(Filter(
-        filterBy: _selectedFilter,
+        selectedAuthor: _selectedAuthor,
+        selectedCategory: _selectedCategory,
         priceMin: _minPrice,
-        priceMax: _maxPrice == 1000 ? double.infinity : _maxPrice));
-    List<Book> books = await getBooks(text);
+        priceMax: _maxPrice == 1000 ? double.infinity : _maxPrice,
+        fechaInicio: _fechaInicio,
+        fechaFin: _fechaFin));
+    _maxPrice = double.infinity == _maxPrice ? 1000 : _maxPrice;
+    List<Book> books = await getBooks(
+        text,
+        _selectedAuthor ?? '',
+        _selectedCategory ?? '',
+        _minPrice.toString(),
+        _maxPrice.toString(),
+        _fechaInicio ?? '',
+        _fechaFin ?? '');
     ref.read(bookNotifierProvider.notifier).setBooks(books);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 }

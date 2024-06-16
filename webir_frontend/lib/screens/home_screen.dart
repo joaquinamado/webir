@@ -28,6 +28,8 @@ class _HomeState extends ConsumerState<Home> {
   String? _selectedAuthor;
   String? _fechaInicio;
   String? _fechaFin;
+  String? _priceMinError;
+  String? _priceMaxError;
   final List<DropdownMenuEntry> _categories = [];
   final List<DropdownMenuEntry> _authors = [];
 
@@ -219,35 +221,60 @@ class _HomeState extends ConsumerState<Home> {
           ),
         ),
         SizedBox(
-          width: 400,
-          height: 40,
-          child: RangeSlider(
-            divisions: 100,
-            values: RangeValues(
-                _minPrice, _maxPrice == double.infinity ? 750 : _maxPrice),
-            min: 0,
-            max: 750,
-            activeColor: BSConstants.tertiaryColor,
-            onChanged: (RangeValues values) {
-              setState(() {
-                _minPrice = values.start;
-                _maxPrice = values.end;
-              });
-            },
-          ),
-        ),
-        SizedBox(
-          width: 400,
-          height: 40,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Min: \$${_minPrice.toStringAsFixed(2)}'),
-              Text(
-                  'Max: ${_maxPrice == double.infinity || _maxPrice == 750 ? 'Unlimited' : '\$${_maxPrice.toStringAsFixed(2)}'}'),
-            ],
-          ),
-        ),
+            width: 400,
+            height: 40,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 150,
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Min',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        if (value.contains(RegExp(r'[a-zA-Z]')) ||
+                            double.parse(value) > _maxPrice) {
+                          _priceMinError =
+                              'El precio mínimo debe ser un número, menor al precio máximo';
+                        } else {
+                          _priceMinError = null;
+                          _minPrice = double.parse(value);
+                        }
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 150,
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Max',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        if (value.contains(RegExp(r'[a-zA-Z]')) ||
+                            double.parse(value) < _minPrice) {
+                          _priceMaxError =
+                              'El precio maximo debe ser un número menor al precio mínimo';
+                        } else {
+                          _priceMaxError = null;
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ],
+            )),
+        const SizedBox(height: 10),
+        Text(_priceMinError ?? '', style: const TextStyle(color: Colors.red)),
+        const SizedBox(height: 10),
+        Text(_priceMaxError ?? '', style: const TextStyle(color: Colors.red)),
       ],
     );
   }

@@ -20,7 +20,7 @@ class _BSAppbarState extends State<BSAppbar> {
       leading: IconButton(
           icon: const Icon(Icons.arrow_back), onPressed: widget.onPressed),
       automaticallyImplyLeading: false,
-      title: const Text('Busqueda de Libros',
+      title: const Text('ReadIt',
           style: TextStyle(color: Colors.white, fontSize: 24.0)),
     );
   }

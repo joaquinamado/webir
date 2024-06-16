@@ -151,7 +151,9 @@ def books(request):
         if bookReview:
             precio = 0
             if bookReview[0].precio_kindle:
-                precio= str(bookReview[0].price)
+                precio= bookReview[0].price
+                if precio == None:
+                    precio = 0
             data.append({
                 "isbn": book.isbn,
                 "titulo": book.titulo,
@@ -163,7 +165,7 @@ def books(request):
                 "imagen": book.imagen,
                 "idioma": book.idioma,
                 "autor": autores[index],
-                "precio": precio,
+                "precio": str(precio),
                 "categoria": categorias[index],
                 "score": {
                     "stars": bookReview[0].stars,
